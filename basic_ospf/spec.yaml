@@ -33,7 +33,10 @@ nodes:
 preconf:
   - cmds:
     - cmd: CRPD_LICENSE="xxxxx" # Paste your license here!!
-    - cmd: BASE_CONFIG="set protocols ospf area 0 interface net0 interface-type p2p; set protocols ospf area 0 interface net1 interface-type p2p; set protocols ospf area 0 interface lo passive;"
+    - cmd: >-
+        BASE_CONFIG="set protocols ospf area 0 interface net0 interface-type p2p;
+        set protocols ospf area 0 interface net1 interface-type p2p;
+        set protocols ospf area 0 interface lo passive;"
 
 node_configs:
   - name: R1

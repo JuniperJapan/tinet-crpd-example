@@ -1,0 +1,66 @@
+nodes:
+  - name: R1
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R2#net0 }
+  - name: R2
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R1#net0 }
+
+preconf:
+  - cmds:
+    - cmd: CRPD_LICENSE="xxxxx" # Paste your license here!!
+    - cmd: >-
+        BASE_CONFIG="set policy-options as-list all-private members 64512-65534;
+        set policy-options as-list all-private members 4200000000-4294967294;
+        set interfaces net0 unit 0 family inet;
+        set interfaces net0 unit 0 family inet6;
+        set protocols bgp group ebgp family inet unicast extended-nexthop;
+        set protocols bgp group ebgp family inet6 unicast;
+        set protocols bgp group ebgp dynamic-neighbor dn1 peer-auto-discovery family inet6 ipv6-nd;
+        set protocols bgp group ebgp dynamic-neighbor dn1 peer-auto-discovery interface net0;
+        set protocols bgp group ebgp peer-as-list all-private;
+        set protocols bgp rfc8950-compliant;
+        set protocols router-advertisement interface net0;"
+
+node_configs:
+  - name: R1
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          "configure;
+          set system host-name R1;
+          set interfaces lo unit 0 family inet address 10.255.0.1/32;
+          set routing-options autonomous-system 65001;
+          set routing-options router-id 10.255.0.1;
+          $BASE_CONFIG
+          commit and-quit;
+          exit"
+
+  - name: R2
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          "configure;
+          set system host-name R2;
+          set interfaces lo unit 0 family inet address 10.255.0.2/32;
+          set routing-options autonomous-system 65002;
+          set routing-options router-id 10.255.0.2;
+          $BASE_CONFIG
+          commit and-quit;
+          exit"
+
+test:
+  - name: show_config
+    cmds:
+      - cmd: docker exec R1 cli -c 'show configuration | display set'
+      - cmd: docker exec R2 cli -c 'show configuration | display set'
+  - name: bgp_summary
+    cmds:
+      - cmd: docker exec R1 cli -c 'show bgp summary'
+      - cmd: docker exec R2 cli -c 'show bgp summary'
