@@ -1,0 +1,45 @@
+nodes:
+  - name: R1
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R2#net0 }
+  - name: R2
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R1#net0 }
+
+preconf:
+  - cmds:
+      - cmd: CRPD_LICENSE="xxxxx" # Paste your license here!!
+
+node_configs:
+  - name: R1
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          'configure;
+          set system host-name R1;
+          set interfaces net0 unit 0 family inet address 10.0.0.1/24;
+          set routing-options autonomous-system 65001;
+          set routing-options router-id 10.255.0.1;
+          set protocols bgp group ebgp neighbor 10.0.0.2 peer-as 65002;
+          commit and-quit;
+          exit'
+
+  - name: R2
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          'configure;
+          set system host-name R2;
+          set interfaces net0 unit 0 family inet address 10.0.0.2/24;
+          set routing-options autonomous-system 65002;
+          set routing-options router-id 10.255.0.2;
+          set protocols bgp group ebgp neighbor 10.0.0.1 peer-as 65001;
+          commit and-quit;
+          exit'
+
