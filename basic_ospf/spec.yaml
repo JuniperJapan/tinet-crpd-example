@@ -1,0 +1,113 @@
+nodes:
+  - name: R1
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R2#net0 }
+      - { name: net1, type: direct, args: R3#net0 }
+      - { name: net2, type: direct, args: S1#eth0 }
+  - name: R2
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R1#net0 }
+      - { name: net1, type: direct, args: R4#net0 }
+  - name: R3
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R1#net1 }
+      - { name: net1, type: direct, args: R4#net1 }
+  - name: R4
+    image: crpd:23.2R1.13
+    interfaces:
+      - { name: net0, type: direct, args: R2#net1 }
+      - { name: net1, type: direct, args: R3#net1 }
+      - { name: net2, type: direct, args: S4#eth0 }
+  - name: S1
+    image: nicolaka/netshoot
+    interfaces:
+      - { name: eth0, type: direct, args: R1#net2 }
+  - name: S4
+    image: nicolaka/netshoot
+    interfaces:
+      - { name: eth0, type: direct, args: R4#net2 }
+
+preconf:
+  - cmds:
+    - cmd: CRPD_LICENSE="xxxxx" # Paste your license here!!
+    - cmd: BASE_CONFIG="set protocols ospf area 0 interface net0 interface-type p2p; set protocols ospf area 0 interface net1 interface-type p2p; set protocols ospf area 0 interface lo passive;"
+
+node_configs:
+  - name: R1
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          "configure;
+          set system host-name R1;
+          set interfaces net0 unit 0 family inet address 10.0.0.1/30;
+          set interfaces net1 unit 0 family inet address 10.0.0.9/30;
+          set interfaces net2 unit 0 family inet address 10.1.0.1/24;
+          set interfaces lo unit 0 family inet address 10.255.0.1/32;
+          $BASE_CONFIG
+          set protocols ospf area 0 interface net2 passive;
+          commit and-quit;
+          exit"
+  - name: R2
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          "configure;
+          set system host-name R2;
+          set interfaces net0 unit 0 family inet address 10.0.0.2/30;
+          set interfaces net1 unit 0 family inet address 10.0.0.13/30;
+          set interfaces lo unit 0 family inet address 10.255.0.2/32;
+          $BASE_CONFIG
+          commit and-quit;
+          exit"
+  - name: R3
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          "configure;
+          set system host-name R3;
+          set interfaces net0 unit 0 family inet address 10.0.0.10/30;
+          set interfaces net1 unit 0 family inet address 10.0.0.5/30;
+          set interfaces lo unit 0 family inet address 10.255.0.3/32;
+          $BASE_CONFIG
+          commit and-quit;
+          exit"
+  - name: R4
+    cmds:
+      - cmd: bash -c "echo $CRPD_LICENSE > /var/tmp/license.txt"
+      - cmd: cli request system license add /var/tmp/license.txt
+      - cmd: >-
+          cli -c 
+          "configure;
+          set system host-name R4;
+          set interfaces net0 unit 0 family inet address 10.0.0.14/30;
+          set interfaces net1 unit 0 family inet address 10.0.0.6/30;
+          set interfaces net2 unit 0 family inet address 10.4.0.1/24;
+          set interfaces lo unit 0 family inet address 10.255.0.4/32;
+          $BASE_CONFIG
+          set protocols ospf area 0 interface net2 passive;
+          commit and-quit;
+          exit"
+  - name: S1
+    cmds:
+      - cmd: ip addr add 10.1.0.2/24 dev eth0
+      - cmd: ip route add default via 10.1.0.1
+
+  - name: S4
+    cmds:
+      - cmd: ip addr add 10.4.0.2/24 dev eth0
+      - cmd: ip route add default via 10.4.0.1
+
+test:
+  - name: client-ping
+    cmds:
+    - cmd: docker exec S1 ping -c2 10.4.0.2
+    - cmd: docker exec S4 ping -c2 10.1.0.2
