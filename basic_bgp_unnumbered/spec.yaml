@@ -10,7 +10,7 @@ nodes:
 
 preconf:
   - cmds:
-    - cmd: CRPD_LICENSE="xxxxx" # Paste your license here!!
+    - cmd: test -v CRPD_LICENSE || CRPD_LICENSE="xxxxx" # Paste your license here!!
     - cmd: >-
         BASE_CONFIG="set policy-options as-list all-private members 64512-65534;
         set policy-options as-list all-private members 4200000000-4294967294;

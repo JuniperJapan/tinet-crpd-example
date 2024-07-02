@@ -10,7 +10,7 @@ nodes:
 
 preconf:
   - cmds:
-      - cmd: CRPD_LICENSE="xxxxx" # Paste your license here!!
+      - cmd: test -v CRPD_LICENSE || CRPD_LICENSE="xxxxx" # Paste your license here!!
 
 node_configs:
   - name: R1
