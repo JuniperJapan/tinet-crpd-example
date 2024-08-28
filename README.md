@@ -25,7 +25,7 @@ Loaded image: crpd:23.2R1.13
 $ git clone https://github.com/JuniperJapan/tinet-crpd-example/
 
 # update license key
-# or `export CRPD_LICENSE_KEY='xxx'` and use `sudo -E bash`
+# or `export CRPD_LICENSE='xxx'` and use `sudo -E bash`
 $ cd tinet-crpd-example/basic_bgp
 $ vi spec.yaml
 
